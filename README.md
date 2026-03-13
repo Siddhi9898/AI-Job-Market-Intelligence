@@ -16,8 +16,10 @@ This project analyzes AI and Data Science job market trends using a Streamlit da
 - AI Job Trend Prediction
 
 ## Dashboard Preview
-<img width="960" height="475" alt="dashboard" src="https://github.com/user-attachments/assets/86b02d5b-9e02-48c9-80bf-6dac8961f0de" />
 
+<p align="center">
+  <<img width="960" height="475" alt="dashboard" src="https://github.com/user-attachments/assets/86b02d5b-9e02-48c9-80bf-6dac8961f0de" />
+</p>
 
 ## Tech Stack
 - Python
