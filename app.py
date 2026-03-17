@@ -138,31 +138,95 @@ elif menu == "Role Skill Analyzer":
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+elif menu == "Salary Analysis":
+
+    st.header("Salary Distribution")
+
+    if "salary" not in df.columns:
+        st.error("Salary column not found")
+
+    else:
+
+        # Clean salary column (same as predictor)
+        df["salary"] = df["salary"].astype(str)
+        df["salary"] = df["salary"].str.replace("â‚¬","",regex=False)
+        df["salary"] = df["salary"].str.replace("€","",regex=False)
+        df["salary"] = df["salary"].str.replace("$","",regex=False)
+        df["salary"] = df["salary"].str.replace(",","",regex=False)
+
+        df["salary_numeric"] = pd.to_numeric(df["salary"], errors="coerce")
+
+        salary_data = df["salary_numeric"].dropna()
+
+        if len(salary_data) == 0:
+            st.warning("No salary data available")
+
+        else:
+
+            import plotly.express as px
+
+            fig = px.histogram(
+                salary_data,
+                nbins=30,
+                title="Salary Distribution"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
 # SALARY ANALYSIS
 elif menu == "Salary Predictor":
 
-    st.header("Salary Predictor")
+    st.header("AI Salary Predictor")
 
-    if "salary_numeric" not in df.columns:
-        st.write("Salary data not available")
+    if "salary" not in df.columns:
+        st.error("Salary column not found in dataset")
+
     else:
 
-        st.write("Enter experience level to estimate salary")
+        # Clean salary column
+        df["salary"] = df["salary"].astype(str)
+        df["salary"] = df["salary"].str.replace("â‚¬","",regex=False)
+        df["salary"] = df["salary"].str.replace("€","",regex=False)
+        df["salary"] = df["salary"].str.replace("$","",regex=False)
+        df["salary"] = df["salary"].str.replace(",","",regex=False)
 
-        experience = st.slider("Years of Experience", 0, 15, 1)
+        df["salary_numeric"] = pd.to_numeric(df["salary"], errors="coerce")
 
-        X = np.array(range(len(df["salary_numeric"].dropna()))).reshape(-1,1)
-        y = df["salary_numeric"].dropna().values
+        salary_data = df["salary_numeric"].dropna()
 
-        model = LinearRegression()
-        model.fit(X, y)
+        if len(salary_data) == 0:
 
-        prediction = model.predict([[experience]])
+            st.warning("No salary data available")
 
-        st.subheader("Estimated Salary")
+        else:
 
-        st.write(int(prediction[0]))
+            st.subheader("Enter Your Profile")
 
+            experience = st.slider("Years of Experience", 0, 10, 2)
+
+            skills = st.number_input("Number of Skills", 1, 20, 5)
+
+            # Create training data
+            X = np.column_stack((
+                np.linspace(0,10,len(salary_data)),
+                np.linspace(1,20,len(salary_data))
+            ))
+
+            y = salary_data.values
+
+            model = LinearRegression()
+            model.fit(X,y)
+
+            prediction = model.predict([[experience,skills]])
+
+            predicted_salary = int(prediction[0])
+
+            salary_inr = predicted_salary * 90
+
+            st.subheader("Predicted Salary")
+
+            st.success(f"${predicted_salary:,}  (~ ₹{salary_inr:,} INR)")
 # SKILL GAP ANALYZER
 elif menu == "Skill Gap Analyzer":
 
@@ -256,43 +320,57 @@ elif menu == "Insights":
 
 elif menu == "Resume Skill Analyzer":
 
-    import PyPDF2
-
     st.header("Resume Skill Analyzer")
 
     uploaded_file = st.file_uploader("Upload Resume (PDF)", type=["pdf"])
 
     if uploaded_file is not None:
 
+        st.success("Resume uploaded successfully")
+
         reader = PyPDF2.PdfReader(uploaded_file)
 
         text = ""
+
         for page in reader.pages:
-           page_text = page.extract_text()
-           if page_text:
+            page_text = page.extract_text()
+            if page_text:
                 text += page_text
 
         text = text.lower()
 
-        all_skills = []
+        if text == "":
+            st.error("Could not read text from the PDF. Try another resume.")
+        else:
 
-        for skills in df["skills"].dropna():
-            skill_list = str(skills).replace("[","").replace("]","").replace("'","").split(",")
-            for s in skill_list:
-                all_skills.append(s.strip().lower())
+            all_skills = []
 
-        market_skills = list(set(all_skills))
+            for skills in df["skills"].dropna():
+                skill_list = str(skills).replace("[","").replace("]","").replace("'","").split(",")
+                for s in skill_list:
+                    all_skills.append(s.strip().lower())
 
-        found_skills = []
+            market_skills = list(set(all_skills))
 
-        for skill in market_skills:
-            if skill.lower() in text:
-                found_skills.append(skill)
+            found_skills = [skill for skill in market_skills if skill in text]
+            missing_skills = [skill for skill in market_skills if skill not in found_skills]
+            match_score = int((len(found_skills) / len(market_skills)) * 100)
+            st.subheader("Resume Match Score")
+            st.progress(match_score)
+            st.write(f"Your resume matches {match_score}% of the AI job market skills")
+            st.divider()
+            st.subheader("Skills Detected in Resume")
 
-        if len(found_skills) == 0:
-            st.write("No skills detected from dataset.")
-        for skill in found_skills[:15]:
-            st.success(skill)
+            for skill in found_skills[:20]:
+                st.success(skill)
+
+            st.divider()
+
+            st.subheader("Skills Missing for AI Job Market")
+
+            for skill in missing_skills[:10]:
+                st.warning(skill)
+
 elif menu == "Job Recommender":
 
     st.header("AI Job Recommendation")
