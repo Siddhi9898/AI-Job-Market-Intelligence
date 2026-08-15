@@ -2,9 +2,6 @@
 
 This project analyzes AI and Data Science job market trends using a Streamlit dashboard.
 
-## 🔗 Live Demo
-https://your-app-link.streamlit.app
-
 ## Features
 - Job Market Analysis
 - Skill Demand Analysis
